@@ -123,26 +123,36 @@ public class Simulation {
       }
 
       Map<Set<Transaction>, Integer> transactionMatches = new HashMap<>();
+      int maxTransactionMatches = 0;
+      Set<Transaction> maxTransactionSet = new HashSet<>();
       // print results
       for (int i = 0; i < numNodes; i++) {
          Set<Transaction> transactions = nodes[i].sendToFollowers();
-         transactionMatches.put(transactions, transactionMatches.getOrDefault(transactions, 0) + 1);
+         int transactionMatchCount = transactionMatches.getOrDefault(transactions, 0) + 1;
+         transactionMatches.put(transactions, transactionMatchCount);
 //         System.out.println("Transaction ids that Node " + i + " believes consensus on:");
 //         for (Transaction tx : transactions)
 //            System.out.println(tx.id);
 //         System.out.println();
 //         System.out.println();
+         if (transactionMatchCount > maxTransactionMatches) {
+            maxTransactionMatches = transactionMatchCount;
+            maxTransactionSet = transactions;
+         }
       }
 
       assert transactionMatches.size() == 2;
       assert transactionMatches.values().contains(maliciousNodeCount);
       assert transactionMatches.values().contains(compliantNodeCount);
 
-      transactionMatches.forEach((transactionSet, transactionMatchCount)
-              -> System.out.println("Transaction sets "
-              + "of size " + transactionSet.size() + ""
-//              + getTransactionArrayString(transactionSet)
-              + " match count: " + transactionMatchCount));
+      System.out.println("Maximum matching transaction set with size ["
+              + maxTransactionSet.size()
+              + "] has match count: " + maxTransactionMatches);
+//      transactionMatches.forEach((transactionSet, transactionMatchCount)
+//              -> System.out.println("Transaction sets "
+//              + "of size " + transactionSet.size() + ""
+////              + getTransactionArrayString(transactionSet)
+//              + " match count: " + transactionMatchCount));
    }
 
    private static String getTransactionArrayString(Set<Transaction> transactionSet) {
