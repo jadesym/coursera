@@ -32,11 +32,11 @@ public class CompliantNode implements Node {
 
     public Set<Transaction> sendToFollowers() {
       if (_roundsCompleted >= _numRounds) {
-//        Set<Integer> validNodes = _lastRoundTransactions == null ? new HashSet<>(_followees)
-//                : _followees
-//                .stream()
-//                .filter(nodeId -> _lastRoundTransactions.containsKey(nodeId))
-//                .collect(Collectors.toSet());
+        Set<Integer> validNodes = _lastRoundTransactions == null ? new HashSet<>(_followees)
+                : _followees
+                .stream()
+                .filter(nodeId -> _lastRoundTransactions.containsKey(nodeId))
+                .collect(Collectors.toSet());
 
         Map<Transaction, Integer> transactionCounts = new HashMap<>();
 
@@ -48,13 +48,12 @@ public class CompliantNode implements Node {
             });
         }
 
-        Set<Transaction> consensusTransactions = new HashSet<>();
-        transactionCounts
+        return transactionCounts
           .entrySet()
           .stream()
-          .filter(entry -> entry.getValue() > _followees.size() / 2)
-          .forEach(entry -> consensusTransactions.add(entry.getKey()));
-        return consensusTransactions;
+          .filter(entry -> entry.getValue() > validNodes.size() / 2)
+          .map(Map.Entry::getKey)
+          .collect(Collectors.toSet());
       }
 
       _roundsCompleted++;
