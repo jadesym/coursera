@@ -52,7 +52,7 @@ public class CompliantNode implements Node {
         return transactionCounts
           .entrySet()
           .stream()
-          .filter(entry -> entry.getValue() > validNodes.size() / 2)
+          .filter(entry -> entry.getValue() >= validNodes.size())
           .map(Map.Entry::getKey)
           .collect(Collectors.toSet());
       }
