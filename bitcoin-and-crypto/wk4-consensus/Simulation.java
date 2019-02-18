@@ -41,7 +41,6 @@ public class Simulation {
 
       System.out.print("Graph Edge Probability: " + p_graph);
       System.out.print(", Malicious Node Probability: " + p_malicious);
-      System.out.print(", Malicious Node Probability: " + p_txDistribution);
       System.out.print(", Initial Transactions Communicated Probability: " + p_txDistribution);
       System.out.println(", Num Rounds: " + numRounds);
 
