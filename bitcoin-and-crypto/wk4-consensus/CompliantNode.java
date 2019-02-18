@@ -9,19 +9,19 @@ public class CompliantNode implements Node {
     private Set<Transaction> _originalTransactions = new HashSet<>();
     private int _roundsCompleted = 0;
     private Map<Integer, Set<Transaction>> _lastRoundTransactions;
-//    private Map<Integer, Boolean> _transactionsHaveChanged;
+    private Map<Integer, Boolean> _transactionsHaveChanged;
 
     public CompliantNode(double p_graph, double p_malicious, double p_txDistribution, int numRounds) {
       _numRounds = numRounds;
     }
 
     public void setFollowees(boolean[] followees) {
-//        _transactionsHaveChanged = new HashMap<>();
+        _transactionsHaveChanged = new HashMap<>();
 
         for (int i = 0; i < followees.length; i++) {
           if (followees[i]) {
             _followees.add(i);
-//            _transactionsHaveChanged.put(i, false);
+            _transactionsHaveChanged.put(i, false);
           }
         }
     }
@@ -36,6 +36,7 @@ public class CompliantNode implements Node {
                 : _followees
                 .stream()
                 .filter(nodeId -> _lastRoundTransactions.containsKey(nodeId))
+                .filter(nodeId -> _transactionsHaveChanged.containsKey(nodeId))
                 .collect(Collectors.toSet());
 
         Map<Transaction, Integer> transactionCounts = new HashMap<>();
@@ -91,9 +92,9 @@ public class CompliantNode implements Node {
                   .filter(lastRoundNodeTransaction -> !newRoundNodeTransactions.contains(lastRoundNodeTransaction))
                   .forEach(lastRoundNodeTransaction -> _followees.remove(nodeId));
 
-//          newRoundNodeTransactions.stream()
-//                  .filter(newRoundNodeTransaction -> !lastRoundNodeTransactions.contains(newRoundNodeTransaction))
-//                  .forEach(newRoundTransaction -> _transactionsHaveChanged.put(nodeId, true));
+          newRoundNodeTransactions.stream()
+                  .filter(newRoundNodeTransaction -> !lastRoundNodeTransactions.contains(newRoundNodeTransaction))
+                  .forEach(newRoundTransaction -> _transactionsHaveChanged.put(nodeId, true));
       }
 
       _lastRoundTransactions = newRoundTransactions;
