@@ -78,12 +78,14 @@ public class CompliantNode implements Node {
     public void receiveFromFollowees(Set<Candidate> candidates) {
       Map<Integer, Set<Transaction>> newRoundTransactions = getRoundTransactions(candidates);
 
+      // If in the first round, record the round transactions and move on
       if (_lastRoundTransactions == null) {
         _lastRoundTransactions = newRoundTransactions;
         return;
       }
 
       for (Integer nodeId : _lastRoundTransactions.keySet()) {
+          // If a followee randomly sends no transactions anymore, remove from valid followees
           if (!newRoundTransactions.containsKey(nodeId)) {
               _validFollowees.remove(nodeId);
               continue;
@@ -92,10 +94,13 @@ public class CompliantNode implements Node {
           Set<Transaction> lastRoundNodeTransactions = _lastRoundTransactions.get(nodeId);
           Set<Transaction> newRoundNodeTransactions = newRoundTransactions.get(nodeId);
 
+          // If any transaction becomes removed by a followee, remove from valid followees
           lastRoundNodeTransactions.stream()
                   .filter(lastRoundNodeTransaction -> !newRoundNodeTransactions.contains(lastRoundNodeTransaction))
                   .forEach(lastRoundNodeTransaction -> _validFollowees.remove(nodeId));
 
+          // Mark that the followee has modified their transactions to later indicate any invalid nodes who aren't
+          // increasing proposed transactions
           newRoundNodeTransactions.stream()
                   .filter(newRoundNodeTransaction -> !lastRoundNodeTransactions.contains(newRoundNodeTransaction))
                   .forEach(newRoundTransaction -> _transactionsHaveChanged.put(nodeId, true));
