@@ -3,9 +3,12 @@ import java.util.stream.Collectors;
 
 /* CompliantNode refers to a node that follows the rules (not malicious)*/
 public class CompliantNode implements Node {
+    private static final double COLLECT_ROUND_PERCENTAGE = 0.70;
+    private final int _collectRounds;
+
     private final int _numRounds;
 
-    private Set<Integer> _followees = new HashSet<>();
+    private Set<Integer> _validFollowees = new HashSet<>();
     private Set<Transaction> _originalTransactions = new HashSet<>();
     private int _roundsCompleted = 0;
     private Map<Integer, Set<Transaction>> _lastRoundTransactions;
@@ -13,6 +16,7 @@ public class CompliantNode implements Node {
 
     public CompliantNode(double p_graph, double p_malicious, double p_txDistribution, int numRounds) {
       _numRounds = numRounds;
+      _collectRounds = (int) (numRounds * COLLECT_ROUND_PERCENTAGE);
     }
 
     public void setFollowees(boolean[] followees) {
@@ -20,7 +24,7 @@ public class CompliantNode implements Node {
 
         for (int i = 0; i < followees.length; i++) {
           if (followees[i]) {
-            _followees.add(i);
+            _validFollowees.add(i);
             _transactionsHaveChanged.put(i, false);
           }
         }
@@ -32,8 +36,8 @@ public class CompliantNode implements Node {
 
     public Set<Transaction> sendToFollowers() {
       if (_roundsCompleted >= _numRounds) {
-        Set<Integer> validNodes = _lastRoundTransactions == null ? new HashSet<>(_followees)
-                : _followees
+        Set<Integer> validNodes = _lastRoundTransactions == null ? new HashSet<>(_validFollowees)
+                : _validFollowees
                 .stream()
                 .filter(nodeId -> _lastRoundTransactions.containsKey(nodeId))
                 .filter(nodeId -> _transactionsHaveChanged.containsKey(nodeId))
@@ -81,7 +85,7 @@ public class CompliantNode implements Node {
 
       for (Integer nodeId : _lastRoundTransactions.keySet()) {
           if (!newRoundTransactions.containsKey(nodeId)) {
-              _followees.remove(nodeId);
+              _validFollowees.remove(nodeId);
               continue;
           }
 
@@ -90,7 +94,7 @@ public class CompliantNode implements Node {
 
           lastRoundNodeTransactions.stream()
                   .filter(lastRoundNodeTransaction -> !newRoundNodeTransactions.contains(lastRoundNodeTransaction))
-                  .forEach(lastRoundNodeTransaction -> _followees.remove(nodeId));
+                  .forEach(lastRoundNodeTransaction -> _validFollowees.remove(nodeId));
 
           newRoundNodeTransactions.stream()
                   .filter(newRoundNodeTransaction -> !lastRoundNodeTransactions.contains(newRoundNodeTransaction))
