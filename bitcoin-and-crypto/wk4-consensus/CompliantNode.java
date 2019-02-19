@@ -9,7 +9,7 @@ public class CompliantNode implements Node {
     private final int _numRounds;
 
     private Set<Integer> _validFollowees = new HashSet<>();
-    private Set<Transaction> _originalTransactions = new HashSet<>();
+    private Set<Transaction> _allTransactions = new HashSet<>();
     private int _roundsCompleted = 0;
     private Map<Integer, Set<Transaction>> _lastRoundTransactions;
     private Map<Integer, Boolean> _transactionsHaveChanged;
@@ -31,7 +31,7 @@ public class CompliantNode implements Node {
     }
 
     public void setPendingTransaction(Set<Transaction> pendingTransactions) {
-        _originalTransactions.addAll(pendingTransactions);
+        _allTransactions.addAll(pendingTransactions);
     }
 
     public Set<Transaction> sendToFollowers() {
@@ -56,23 +56,13 @@ public class CompliantNode implements Node {
         return transactionCounts
           .entrySet()
           .stream()
-          .filter(entry -> entry.getValue() >= validNodes.size())
+          .filter(entry -> entry.getValue() >= validNodes.size() / 2)
           .map(Map.Entry::getKey)
           .collect(Collectors.toSet());
       }
 
       _roundsCompleted++;
-
-      Set<Transaction> finalTransactions = new HashSet<>(_originalTransactions);
-
-      if (_lastRoundTransactions != null) {
-          _lastRoundTransactions.values()
-                  .stream()
-                  .flatMap(Collection::stream)
-                  .forEach(finalTransactions::add);
-      }
-
-      return finalTransactions;
+      return _allTransactions;
     }
 
     public void receiveFromFollowees(Set<Candidate> candidates) {
@@ -94,16 +84,23 @@ public class CompliantNode implements Node {
           Set<Transaction> lastRoundNodeTransactions = _lastRoundTransactions.get(nodeId);
           Set<Transaction> newRoundNodeTransactions = newRoundTransactions.get(nodeId);
 
-          // If any transaction becomes removed by a followee, remove from valid followees
-          lastRoundNodeTransactions.stream()
-                  .filter(lastRoundNodeTransaction -> !newRoundNodeTransactions.contains(lastRoundNodeTransaction))
-                  .forEach(lastRoundNodeTransaction -> _validFollowees.remove(nodeId));
+          if (_roundsCompleted <= _collectRounds) {
+              // If any transaction becomes removed by a followee, remove from valid followees
+              lastRoundNodeTransactions.stream()
+                      .filter(lastRoundNodeTransaction -> !newRoundNodeTransactions.contains(lastRoundNodeTransaction))
+                      .forEach(lastRoundNodeTransaction -> _validFollowees.remove(nodeId));
 
-          // Mark that the followee has modified their transactions to later indicate any invalid nodes who aren't
-          // increasing proposed transactions
-          newRoundNodeTransactions.stream()
-                  .filter(newRoundNodeTransaction -> !lastRoundNodeTransactions.contains(newRoundNodeTransaction))
-                  .forEach(newRoundTransaction -> _transactionsHaveChanged.put(nodeId, true));
+              // Mark that the followee has modified their transactions to later indicate any invalid nodes who aren't
+              // increasing proposed transactions
+              newRoundNodeTransactions.stream()
+                      .filter(newRoundNodeTransaction -> !lastRoundNodeTransactions.contains(newRoundNodeTransaction))
+                      .forEach(newRoundTransaction -> _transactionsHaveChanged.put(nodeId, true));
+          } else {
+              // In the last rounds, if any change in transactions occurs, remove from valid followees
+              if (!lastRoundNodeTransactions.equals(newRoundNodeTransactions)) {
+                  _validFollowees.remove(nodeId);
+              }
+          }
       }
 
       _lastRoundTransactions = newRoundTransactions;
@@ -115,6 +112,16 @@ public class CompliantNode implements Node {
       for (Candidate candidate : candidates) {
         Transaction candidateTransaction = candidate.tx;
         Integer candidateSender = candidate.sender;
+
+        // Add all transactions to the proposal list if within the collect rounds
+        if (_roundsCompleted <= _collectRounds) {
+            _allTransactions.add(candidateTransaction);
+        }
+
+        // Ignore transaction if not from a valid followee
+        if (!_validFollowees.contains(candidateSender)) {
+            continue;
+        }
 
         if (!newRoundTransactions.containsKey(candidateSender)) {
           newRoundTransactions.put(candidateSender, new HashSet<>());

@@ -147,7 +147,9 @@ public class Simulation {
 
       System.out.println("Maximum matching transaction set with size ["
               + maxTransactionSet.size()
-              + "] has match count: " + maxTransactionMatches);
+              + "/" + numTx
+              + "] has match count: " + maxTransactionMatches
+              + "/" + compliantNodeCount);
 //      transactionMatches.forEach((transactionSet, transactionMatchCount)
 //              -> System.out.println("Transaction sets "
 //              + "of size " + transactionSet.size() + ""
