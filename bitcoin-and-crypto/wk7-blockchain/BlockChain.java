@@ -48,6 +48,7 @@ public class BlockChain {
         BlockPayload blockPayload
                 = requireNonNull(createBlockPayload(genesisBlock, 1, new UTXOPool()),
                     "Block payload should have all valid transactions, so creation should not be non-null.");
+        addCoinbaseToUTXOPool(genesisBlock, blockPayload.getUTXOPool());
 
         _blockPayloadsByHash.put(
                 new ByteArrayWrapper(genesisBlock.getHash()),
@@ -161,6 +162,8 @@ public class BlockChain {
             return false;
         }
 
+        addCoinbaseToUTXOPool(block, newBlockPayload.getUTXOPool());
+
         // Adding the block payload to storage
         _blockPayloadsByHash.put(
                 new ByteArrayWrapper(block.getHash()),
@@ -190,6 +193,18 @@ public class BlockChain {
         }
 
         return true;
+    }
+
+    private void addCoinbaseToUTXOPool(Block block, UTXOPool utxoPool) {
+        Transaction coinbaseTransaction = block.getCoinbase();
+
+        for (int i = 0; i < coinbaseTransaction.numOutputs(); i++) {
+            Transaction.Output output = coinbaseTransaction.getOutput(i);
+
+            utxoPool.addUTXO(
+                    new UTXO(coinbaseTransaction.getHash(), i),
+                    output);
+        }
     }
 
     /** Add a transaction to the transaction pool */
