@@ -52,19 +52,19 @@ public class TxHandler {
 
             UTXO claimedUTXO = new UTXO(transactionInput.prevTxHash, transactionInput.outputIndex);
 
-            // (3) No UTXOs are claimed more than once
-            if (claimedUTXOs.contains(claimedUTXO)) {
-                return false;
-            } else {
-                claimedUTXOs.add(claimedUTXO);
-            }
-
             Transaction.Output inputUTXOTransactionOutput = _utxoPool.getTxOutput(claimedUTXO);
             // (1) Check all outputs claimed by transaction are in the UTXO pool
             if (inputUTXOTransactionOutput == null) {
                 return false;
             } else {
                 inputSum += inputUTXOTransactionOutput.value;
+            }
+
+            // (3) No UTXOs are claimed more than once
+            if (claimedUTXOs.contains(claimedUTXO)) {
+                return false;
+            } else {
+                claimedUTXOs.add(claimedUTXO);
             }
 
             byte[] inputTransactionData = tx.getRawDataToSign(inputIndex);
