@@ -60,18 +60,14 @@ public class BlockChain {
     }
 
     private BlockPayload createBlockPayload(Block block, int blockHeight, UTXOPool utxoPool) {
-        TxHandler txHandler = new TxHandler(utxoPool);
-        List<Transaction> blockTransactions = block.getTransactions();
+        TxHandler txHandler = new TxHandler(new UTXOPool(utxoPool));
+        Transaction[] blockTransactions = block.getTransactions().toArray(new Transaction[0]);
+        Transaction[] validTransactions = txHandler.handleTxs(blockTransactions);
 
-        for (Transaction blockTransaction : blockTransactions) {
-            if (!txHandler.isValidTx(blockTransaction)) {
-                return null;
-            }
+        if (validTransactions.length != blockTransactions.length) {
+            return null;
         }
 
-        Transaction[] blockTransactionsArray
-                = blockTransactions.toArray(new Transaction[0]);
-        txHandler.handleTxs(blockTransactionsArray);
         UTXOPool blockUTXOPool = txHandler.getUTXOPool();
 
         return new BlockPayload(block, blockHeight, blockUTXOPool);
