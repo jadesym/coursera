@@ -32,7 +32,7 @@ public class BlockChain {
     }
 
     public static final int CUT_OFF_AGE = 10;
-    private Map<byte[], BlockPayload> _blockPayloadsByHash;
+    private Map<ByteArrayWrapper, BlockPayload> _blockPayloadsByHash;
     private TreeMap<Integer, List<BlockPayload>> _blockPayloadsByHeight;
     private TransactionPool _transactionPool;
 
@@ -49,7 +49,9 @@ public class BlockChain {
                 = requireNonNull(createBlockPayload(genesisBlock, 1, new UTXOPool()),
                     "Block payload should have all valid transactions, so creation should not be non-null.");
 
-        _blockPayloadsByHash.put(genesisBlock.getHash(), blockPayload);
+        _blockPayloadsByHash.put(
+                new ByteArrayWrapper(genesisBlock.getHash()),
+                blockPayload);
 
         List<BlockPayload> maxHeightBlockPayloads = new ArrayList<>();
         maxHeightBlockPayloads.add(blockPayload);
@@ -127,7 +129,7 @@ public class BlockChain {
             return false;
         }
 
-        BlockPayload previousBlockPayload = _blockPayloadsByHash.get(previousHash);
+        BlockPayload previousBlockPayload = _blockPayloadsByHash.get(new ByteArrayWrapper(previousHash));
 
         // Return false if there is not previous block payload aka attempting to add another genesis block
         if (previousBlockPayload == null) {
@@ -160,7 +162,9 @@ public class BlockChain {
         }
 
         // Adding the block payload to storage
-        _blockPayloadsByHash.put(block.getHash(), newBlockPayload);
+        _blockPayloadsByHash.put(
+                new ByteArrayWrapper(block.getHash()),
+                newBlockPayload);
         List<BlockPayload> newBlockPayloadHeightBlockPayloads = _blockPayloadsByHeight
                 .computeIfAbsent(newBlockPayloadHeight, payloadHeight -> new ArrayList<>());
         newBlockPayloadHeightBlockPayloads.add(newBlockPayload);
